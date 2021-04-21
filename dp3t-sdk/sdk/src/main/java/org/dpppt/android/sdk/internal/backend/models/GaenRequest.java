@@ -9,12 +9,16 @@
  */
 package org.dpppt.android.sdk.internal.backend.models;
 
+import android.content.Context;
+
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.google.android.gms.nearby.exposurenotification.TemporaryExposureKey;
 
+import org.dpppt.android.sdk.InteroperabilityMode;
+import org.dpppt.android.sdk.internal.AppConfigManager;
 import org.dpppt.android.sdk.util.DateUtil;
 
 import static org.dpppt.android.sdk.internal.util.Base64Util.toBase64;
@@ -26,7 +30,9 @@ public class GaenRequest {
 
 	int fake;
 
-	public GaenRequest(List<TemporaryExposureKey> temporaryExposureKeys, int delayedKeyDate) {
+	List<String> countries;
+
+	public GaenRequest(List<TemporaryExposureKey> temporaryExposureKeys, int delayedKeyDate, Context context) {
 		ArrayList<GaenKey> keys = new ArrayList<>();
 		int rollingStartNumber = DateUtil.getCurrentRollingStartNumber();
 		for (TemporaryExposureKey temporaryExposureKey : temporaryExposureKeys) {
@@ -51,6 +57,29 @@ public class GaenRequest {
 		this.gaenKeys = keys;
 		this.delayedKeyDate = delayedKeyDate;
 		this.fake = 0;
+		this.countries = new ArrayList<>();
+
+		this.countries.add("MT");
+		AppConfigManager appConfigManager = AppConfigManager.getInstance(context);
+		boolean interopPossible = appConfigManager.isInteropPossible();
+		if(interopPossible){
+			int interopMode = appConfigManager.getInteropMode();
+			switch (interopMode){
+				case InteroperabilityMode.EU:{
+					countries.addAll(appConfigManager.getInteropEuropeanCountries());
+					break;
+				}
+				case InteroperabilityMode.COUNTRIES_UPDATE_PENDING:
+				case InteroperabilityMode.COUNTRIES: {
+					countries.addAll(appConfigManager.getInteropSelectedCountries());
+					break;
+				}
+				default:{
+					break;
+				}
+			}
+
+		}
 	}
 
 	public List<GaenKey> getGaenKeys() {
@@ -68,5 +97,9 @@ public class GaenRequest {
 	public void setFake(Integer fake) {
 		this.fake = fake;
 	}
+
+	public List<String> getCountries() { return countries; }
+
+	public void setCountries(List<String> countries) { this.countries = countries; }
 
 }

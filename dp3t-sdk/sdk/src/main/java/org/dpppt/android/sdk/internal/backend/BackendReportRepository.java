@@ -30,8 +30,10 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class BackendReportRepository implements Repository {
 
 	private ReportService reportService;
+	private Context context;
 
 	public BackendReportRepository(@NonNull Context context, String reportBaseUrl) {
+		this.context = context;
 		Retrofit reportRetrofit = new Retrofit.Builder()
 				.baseUrl(reportBaseUrl)
 				.client(getClientBuilder(context).build())
@@ -64,7 +66,7 @@ public class BackendReportRepository implements Repository {
 	}
 
 	public void addPendingGaenKey(GaenKey gaenKey, String token) throws IOException, StatusCodeException {
-		Response<Void> response = reportService.addPendingGaenKey(new GaenSecondDay(gaenKey), token).execute();
+		Response<Void> response = reportService.addPendingGaenKey(new GaenSecondDay(gaenKey, this.context), token).execute();
 		if (!response.isSuccessful()) {
 			throw new StatusCodeException(response.raw(), response.errorBody());
 		}

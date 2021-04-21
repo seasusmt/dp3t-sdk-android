@@ -16,6 +16,9 @@ import org.dpppt.android.sdk.internal.backend.BackendReportRepository;
 import org.dpppt.android.sdk.internal.util.Json;
 import org.dpppt.android.sdk.models.ApplicationInfo;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class AppConfigManager {
 
 	private static AppConfigManager instance;
@@ -53,6 +56,13 @@ public class AppConfigManager {
 	private static final String PREF_MIN_DURATION_FOR_EXPOSURE = "minDurationForExposure";
 	public static final int DEFAULT_NUMBER_OF_DAYS_TO_CONSIDER_FOR_EXPOSURE = 10;
 	public static final int DEFAULT_NUMBER_OF_DAYS_TO_KEEP_EXPOSED_DAYS = 14;
+
+	public static final String INTEROP_POSSIBLE = "interopPossible";
+	public static final String INTEROP_MODE = "interopMode";
+	public static final String INTEROP_SELECTED_COUNTRIES = "interopSelectedCountries";
+	public static final String INTEROP_EUROPEAN_COUNTRIES = "interopEuropeanCountries";
+
+	private static final String WIFI_SYNC = "wifiSync";
 
 	private SharedPreferences sharedPrefs;
 
@@ -203,6 +213,46 @@ public class AppConfigManager {
 
 	public long getENModuleVersion() {
 		return sharedPrefs.getLong(PREF_EN_MODULE_VERSION, 0);
+	}
+
+	public void setInteropMode(int interopMode) {
+		sharedPrefs.edit().putInt(INTEROP_MODE, interopMode).apply();
+	}
+
+	public int getInteropMode() {
+		return sharedPrefs.getInt(INTEROP_MODE, -1);
+	}
+
+	public void setInteropSelectedCountries(HashSet selectedCountries) {
+		sharedPrefs.edit().putStringSet(INTEROP_SELECTED_COUNTRIES, selectedCountries).apply();
+	}
+
+	public Set<String> getInteropSelectedCountries() {
+		return sharedPrefs.getStringSet(INTEROP_SELECTED_COUNTRIES, new HashSet<String>());
+	}
+
+	public void setInteropEuropeanCountries(HashSet europeanCountries) {
+		sharedPrefs.edit().putStringSet(INTEROP_EUROPEAN_COUNTRIES, europeanCountries).apply();
+	}
+
+	public Set<String> getInteropEuropeanCountries() {
+		return sharedPrefs.getStringSet(INTEROP_EUROPEAN_COUNTRIES, new HashSet<String>());
+	}
+
+	public void setInteropPossible(boolean enabled) {
+		sharedPrefs.edit().putBoolean(INTEROP_POSSIBLE, enabled).apply();
+	}
+
+	public boolean isInteropPossible() {
+		return sharedPrefs.getBoolean(INTEROP_POSSIBLE, false);
+	}
+
+	public void setWifiSync(boolean enabled) {
+		sharedPrefs.edit().putBoolean(WIFI_SYNC, enabled).apply();
+	}
+
+	public boolean isWifiSync() {
+		return sharedPrefs.getBoolean(WIFI_SYNC, false);
 	}
 
 }

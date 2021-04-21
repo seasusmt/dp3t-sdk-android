@@ -10,6 +10,9 @@
 package org.dpppt.android.sdk.internal;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+
 import androidx.annotation.NonNull;
 import androidx.work.*;
 
@@ -27,6 +30,7 @@ import com.google.android.gms.nearby.exposurenotification.TemporaryExposureKey;
 
 import org.dpppt.android.sdk.BuildConfig;
 import org.dpppt.android.sdk.DP3T;
+import org.dpppt.android.sdk.InteroperabilityMode;
 import org.dpppt.android.sdk.TracingStatus.ErrorState;
 import org.dpppt.android.sdk.internal.backend.BackendBucketRepository;
 import org.dpppt.android.sdk.internal.backend.StatusCodeException;
@@ -130,6 +134,18 @@ public class SyncWorker extends Worker {
 				GaenStateHelper.invalidateGaenAvailability(context);
 				GaenStateHelper.invalidateGaenEnabled(context);
 
+				AppConfigManager appConfigManager = AppConfigManager.getInstance(context);
+				boolean isWifiSync = appConfigManager.isWifiSync();
+
+				ConnectivityManager cm = (ConnectivityManager)context.getSystemService(Context.CONNECTIVITY_SERVICE);
+				NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+				boolean isWifiConnected = activeNetwork != null && activeNetwork.isConnected() && activeNetwork.getType() == ConnectivityManager.TYPE_WIFI;
+
+				if(isWifiSync && !isWifiConnected){
+					Logger.i(TAG, "sync skipped due to wifi sync");
+					return;
+				}
+
 				try {
 					uploadPendingKeys(context);
 
@@ -159,6 +175,29 @@ public class SyncWorker extends Worker {
 			AppConfigManager appConfigManager = AppConfigManager.getInstance(context);
 			ApplicationInfo appConfig = appConfigManager.getAppConfig();
 
+			List<String> countriesList = new ArrayList<String>();
+			countriesList.add("MT");
+			boolean interopPossible = appConfigManager.isInteropPossible();
+			if(interopPossible){
+				int interopMode = appConfigManager.getInteropMode();
+				switch (interopMode){
+					case InteroperabilityMode.EU:{
+						countriesList.addAll(appConfigManager.getInteropEuropeanCountries());
+						break;
+					}
+					case InteroperabilityMode.COUNTRIES_UPDATE_PENDING:
+					case InteroperabilityMode.COUNTRIES: {
+						countriesList.addAll(appConfigManager.getInteropSelectedCountries());
+						break;
+					}
+					default:{
+						break;
+					}
+				}
+			}
+
+			String countries = ConvertListToString(countriesList, ",");
+
 			BackendBucketRepository backendBucketRepository =
 					new BackendBucketRepository(context, appConfig.getBucketBaseUrl(), bucketSignaturePublicKey);
 			GoogleExposureClient googleExposureClient = GoogleExposureClient.getInstance(context);
@@ -167,7 +206,7 @@ public class SyncWorker extends Worker {
 				try {
 					Logger.d(TAG, "loading exposees");
 					Response<ResponseBody> result =
-							backendBucketRepository.getGaenExposees(appConfigManager.getLastKeyBundleTag());
+							backendBucketRepository.getGaenExposees(appConfigManager.getLastKeyBundleTag(), countries);
 
 					if (result.code() != 204) {
 						File file = new File(context.getCacheDir(),
@@ -212,6 +251,19 @@ public class SyncWorker extends Worker {
 			} else {
 				return false;
 			}
+		}
+
+		private String ConvertListToString(List<String> list, String delimeter){
+			String result = "";
+			String last = list.get(list.size() - 1);
+			for (String element : list) {
+				if(element.equals(last)){
+					result += element;
+				}else{
+					result += element + delimeter;
+				}
+			}
+			return result.toLowerCase();
 		}
 
 		private void addHistoryEntry(boolean instantError, boolean delayedError) {

@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 
 import java.io.IOException;
 import java.security.PublicKey;
+import java.util.ArrayList;
 
 import org.dpppt.android.sdk.backend.SignatureException;
 import org.dpppt.android.sdk.backend.SignatureVerificationInterceptor;
@@ -43,10 +44,10 @@ public class BackendBucketRepository implements Repository {
 		bucketService = bucketRetrofit.create(BucketService.class);
 	}
 
-	public Response<ResponseBody> getGaenExposees(String lastKeyBundleTag)
+	public Response<ResponseBody> getGaenExposees(String lastKeyBundleTag, String countries)
 			throws IOException, StatusCodeException, ServerTimeOffsetException, SignatureException {
 		Response<ResponseBody> response;
-		response = bucketService.getGaenExposees(lastKeyBundleTag).execute();
+		response = bucketService.getGaenExposees(lastKeyBundleTag, countries).execute();
 		if (response.isSuccessful()) {
 			return response;
 		} else {

@@ -15,6 +15,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.LocationManager;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.util.Consumer;
@@ -78,6 +79,13 @@ public class DP3T {
 		AppConfigManager appConfigManager = AppConfigManager.getInstance(context);
 		appConfigManager.setManualApplicationInfo(applicationInfo);
 		appConfigManager.setDevHistory(devHistory);
+
+		//set interop settings to default upon installation
+		if(appConfigManager.getInteropMode() == -1){
+			appConfigManager.setInteropMode(InteroperabilityMode.DISABLED);
+			appConfigManager.setInteropSelectedCountries(new HashSet());
+		}
+
 		SyncWorker.setBucketSignaturePublicKey(signaturePublicKey);
 
 		executeInit(context.getApplicationContext(), appConfigManager);
@@ -263,7 +271,7 @@ public class DP3T {
 									}
 								}
 							}
-							GaenRequest exposeeListRequest = new GaenRequest(filteredKeys, delayedKeyDate);
+							GaenRequest exposeeListRequest = new GaenRequest(filteredKeys, delayedKeyDate, activity);
 
 							AppConfigManager appConfigManager = AppConfigManager.getInstance(activity);
 							try {
@@ -301,6 +309,101 @@ public class DP3T {
 						});
 	}
 
+	public static void updateInteropMode(Activity activity, int mode, ResponseCallback<Boolean> callback){
+		AppConfigManager appConfigManager = AppConfigManager.getInstance(activity);
+		int currentMode = appConfigManager.getInteropMode();
+
+		appConfigManager.setInteropMode(mode);
+
+		int newMode = appConfigManager.getInteropMode();
+
+		if(currentMode != newMode || (currentMode == InteroperabilityMode.DISABLED && newMode == InteroperabilityMode.DISABLED)){
+			callback.onSuccess(true);
+		}else{
+			Throwable throwable = new Throwable("Failed to update interop mode");
+			callback.onError(throwable);
+		}
+	}
+
+	public static void updateSelectedCountries(Context context, HashSet selectedCountries, ResponseCallback<Boolean> callback){
+		AppConfigManager appConfigManager = AppConfigManager.getInstance(context);
+		Set currentCountries = appConfigManager.getInteropSelectedCountries();
+
+		appConfigManager.setInteropSelectedCountries(selectedCountries);
+
+		Set newCountries = appConfigManager.getInteropSelectedCountries();
+
+		if(!currentCountries.equals(newCountries)){
+			callback.onSuccess(true);
+		}else{
+			Throwable throwable = new Throwable("Failed to update interop selected countries");
+			callback.onError(throwable);
+		}
+	}
+
+	public static void clearSelectedCountries(Context context, ResponseCallback<Boolean> callback){
+		AppConfigManager appConfigManager = AppConfigManager.getInstance(context);
+
+		appConfigManager.setInteropSelectedCountries(new HashSet<String>());
+
+		Set newCountries = appConfigManager.getInteropSelectedCountries();
+
+		if(newCountries.isEmpty()){
+			callback.onSuccess(true);
+		}else{
+			Throwable throwable = new Throwable("Failed to update interop selected countries");
+			callback.onError(throwable);
+		}
+	}
+
+	public static void updateEuropeanCountries(Context context, HashSet europeanCountries, ResponseCallback<Boolean> callback){
+		AppConfigManager appConfigManager = AppConfigManager.getInstance(context);
+		Set currentCountries = appConfigManager.getInteropEuropeanCountries();
+
+		appConfigManager.setInteropEuropeanCountries(europeanCountries);
+
+		Set newCountries = appConfigManager.getInteropEuropeanCountries();
+
+		if(!currentCountries.equals(newCountries)){
+			callback.onSuccess(true);
+		}else{
+			Throwable throwable = new Throwable("Failed to update interop european countries");
+			callback.onError(throwable);
+		}
+	}
+
+	public static void updateWifiSync(Context context, boolean value, ResponseCallback<Boolean> callback){
+		AppConfigManager appConfigManager = AppConfigManager.getInstance(context);
+		boolean currentSetting = appConfigManager.isWifiSync();
+
+		appConfigManager.setWifiSync(value);
+
+		boolean newSetting = appConfigManager.isWifiSync();
+
+		if(currentSetting != newSetting){
+			callback.onSuccess(true);
+		}else{
+			Throwable throwable = new Throwable("Failed to update wifi sync setting");
+			callback.onError(throwable);
+		}
+	}
+
+	public static void updateInteropPossible(Context context, boolean value, ResponseCallback<Boolean> callback){
+		AppConfigManager appConfigManager = AppConfigManager.getInstance(context);
+		boolean currentSetting = appConfigManager.isInteropPossible();
+
+		appConfigManager.setInteropPossible(value);
+
+		boolean newSetting = appConfigManager.isInteropPossible();
+
+		if(currentSetting != newSetting){
+			callback.onSuccess(true);
+		}else{
+			Throwable throwable = new Throwable("Failed to update interop possible setting");
+			callback.onError(throwable);
+		}
+	}
+
 	private static void reportFailedIAmInfected(Throwable e) {
 		if (pendingIAmInfectedRequest == null) {
 			throw new IllegalStateException("pendingIAmInfectedRequest must be set before calling reportFailedIAmInfected()");
@@ -315,7 +418,7 @@ public class DP3T {
 		checkInit();
 
 		int delayedKeyDate = DateUtil.getCurrentRollingStartNumber();
-		GaenRequest exposeeListRequest = new GaenRequest(new ArrayList<>(), delayedKeyDate);
+		GaenRequest exposeeListRequest = new GaenRequest(new ArrayList<>(), delayedKeyDate, context);
 		exposeeListRequest.setFake(1);
 
 		AppConfigManager appConfigManager = AppConfigManager.getInstance(context);

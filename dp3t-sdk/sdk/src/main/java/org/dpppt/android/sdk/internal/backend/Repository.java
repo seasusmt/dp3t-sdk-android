@@ -10,12 +10,14 @@
 package org.dpppt.android.sdk.internal.backend;
 
 import android.content.Context;
-import androidx.annotation.NonNull;
 
-import java.net.Proxy;
+import androidx.annotation.NonNull;
 
 import org.dpppt.android.sdk.DP3T;
 import org.dpppt.android.sdk.backend.UserAgentInterceptor;
+
+import java.net.Proxy;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
@@ -24,24 +26,26 @@ import static org.dpppt.android.sdk.internal.backend.ProxyConfig.DISABLE_SYSTEM_
 
 public interface Repository {
 
-	default OkHttpClient.Builder getClientBuilder(@NonNull Context context) {
-		OkHttpClient.Builder okHttpBuilder = new OkHttpClient.Builder();
+    default OkHttpClient.Builder getClientBuilder(@NonNull Context context) {
+        OkHttpClient.Builder okHttpBuilder = new OkHttpClient.Builder();
+        okHttpBuilder.connectTimeout(60, TimeUnit.SECONDS);
+        okHttpBuilder.readTimeout(60, TimeUnit.SECONDS);
 
-		if (DP3T.getUserAgent() != null) {
-			okHttpBuilder.addInterceptor(new UserAgentInterceptor(DP3T.getUserAgent()));
-		}
+        if (DP3T.getUserAgent() != null) {
+            okHttpBuilder.addInterceptor(new UserAgentInterceptor(DP3T.getUserAgent()));
+        }
 
-		int cacheSize = 50 * 1024 * 1024; // 50 MB
-		Cache cache = new Cache(context.getCacheDir(), cacheSize);
-		okHttpBuilder.cache(cache);
+        int cacheSize = 50 * 1024 * 1024; // 50 MB
+        Cache cache = new Cache(context.getCacheDir(), cacheSize);
+        okHttpBuilder.cache(cache);
 
-		okHttpBuilder.certificatePinner(CertificatePinning.getCertificatePinner());
+        okHttpBuilder.certificatePinner(CertificatePinning.getCertificatePinner());
 
-		if (DISABLE_SYSTEM_PROXY) {
-			okHttpBuilder.proxy(Proxy.NO_PROXY);
-		}
+        if (DISABLE_SYSTEM_PROXY) {
+            okHttpBuilder.proxy(Proxy.NO_PROXY);
+        }
 
-		return okHttpBuilder;
-	}
+        return okHttpBuilder;
+    }
 
 }

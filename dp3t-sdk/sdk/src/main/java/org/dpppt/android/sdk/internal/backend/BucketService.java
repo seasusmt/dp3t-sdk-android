@@ -9,14 +9,19 @@
  */
 package org.dpppt.android.sdk.internal.backend;
 
+import org.dpppt.android.sdk.internal.backend.models.GaenRequest;
+
+import java.util.ArrayList;
+
 import okhttp3.ResponseBody;
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
 interface BucketService {
 
 	@GET("v2/gaen/exposed")
-	Call<ResponseBody> getGaenExposees(@Query("lastKeyBundleTag") String lastKeyBundleTag);
+	Call<ResponseBody> getGaenExposees(@Query("lastKeyBundleTag") String lastKeyBundleTag, @Query(value = "countries", encoded = true)String countries);
 
 }
